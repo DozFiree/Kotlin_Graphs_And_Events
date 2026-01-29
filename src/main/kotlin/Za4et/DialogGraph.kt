@@ -1,10 +1,10 @@
 package Za4et
 
+class DialogGraph {
+    private val nodes = mutableMapOf<QuestState, DialogNode>()
 
-class DialogGraph{
-    private val nodes = mutableMapOf<QuestState, lesson15.DialogNode>()
-
-    init{
+    init {
+        // Создаем все узлы диалога
         val start = DialogNode(
             QuestState.START,
             "Привет, подходи сюда."
@@ -31,18 +31,32 @@ class DialogGraph{
         )
 
 
-         talking.addChoice("accept", QuestState.ACCEPTED)
-        talking.addChoice("refuse", QuestState.DECLINE)
+        start.addChoice("1. Поговорить", QuestState.TALKING)
 
-        accepted.addChoice("bye", QuestState.COMPLETED)
-        decline.addChoice("bye", QuestState.COMPLETED)
-        completed.addChoice("bye", QuestState.COMPLETED)
 
-        listOf( accepted, decline, completed).forEach {
-            nodes[it.state] = it
-        }
+        talking.addChoice("1. Принять задание", QuestState.ACCEPTED)
+        talking.addChoice("2. Отказаться", QuestState.DECLINE)
+
+
+        accepted.addChoice("1. Завершить", QuestState.COMPLETED)
+
+
+        decline.addChoice("1. Завершить", QuestState.COMPLETED)
+
+
+        completed.addChoice("1. Начать заново", QuestState.START)
+
+        // Добавляем все узлы в граф
+        nodes[start.state] = start
+        nodes[talking.state] = talking
+        nodes[accepted.state] = accepted
+        nodes[decline.state] = decline
+        nodes[dummyKilled.state] = dummyKilled
+        nodes[completed.state] = completed
     }
-    fun getNode(state: QuestState): DialogNode{
-        return nodes[state]!!
+
+    fun getNode(state: QuestState): DialogNode? {
+        return nodes[state]
     }
+
 }

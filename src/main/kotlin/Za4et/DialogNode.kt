@@ -1,26 +1,33 @@
 package Za4et
 
-
 class DialogNode(
     val state: QuestState,
     val text: String
 ){
-    // варианты выбора игрока(переходы)
-    // choiceId -> следующее состояние после выбора
     private val choices = mutableMapOf<String, QuestState>()
 
-    fun addChoice(choiceId: String, nextState: QuestState){
-        choices[choiceId] = nextState
+    fun addChoice(choiceText: String, nextState: QuestState){
+        choices[choiceText] = nextState
     }
 
-    fun getNextState(choiceId: String):  QuestState? {
-        return choices[choiceId]
+    fun getNextState(choiceIndex: Int):  QuestState? {
+        if (choiceIndex < 1 || choiceIndex > choices.size) return null
+        return choices.values.elementAt(choiceIndex - 1)
     }
+
     fun print(){
-        println("NPC говорит: \"$text\" ")
-        println("Варианты: ")
-        for (choice in choices.keys){
-            println("→ $choice")
+        println("\n[$state]")
+        println("NPC: \"$text\"")
+
+        if (choices.isNotEmpty()) {
+            println("\nВарианты:")
+            var index = 1
+            for ((choiceText, _) in choices) {
+                println("  $index. $choiceText")
+                index++
+            }
         }
     }
+
+    fun getChoicesCount(): Int = choices.size
 }
