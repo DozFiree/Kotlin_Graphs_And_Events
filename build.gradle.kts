@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "2.2.20"
+    kotlin("jvm") version "2.2.21"
 }
 
 group = "org.example"
@@ -13,6 +13,8 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
+    implementation("de.fabmax.kool:kool-core:0.19.0")
+    implementation("de.fabmax.kool:kool-physics:0.19.0")
 }
 
 tasks.test {
