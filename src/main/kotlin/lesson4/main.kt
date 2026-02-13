@@ -224,9 +224,6 @@ class SaveSystem(
                 }
             }
         }
-
-        // Сортируем сохранения по дате изменения (сначала новые)
-        return saves.sortedByDescending { it.filePath.lastModified() }
     }
     fun getPlayerSaves(playerId: String): List<SaveInfo> {
         return getAllSaves().filter { it.playerId == playerId }
@@ -287,7 +284,6 @@ fun pushLog(game: GameState, text: String){
     game.eventLog.value = (game.eventLog.value + text).takeLast(20)
 }
 
-// Функция дамага с крит уроном
 fun main() = KoolApplication {
     val game = GameState()
     val bus = EventBus()
