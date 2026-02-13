@@ -224,6 +224,7 @@ class SaveSystem(
                 }
             }
         }
+         return saves.sortedByDescending { it.filePath.lastModified() }
     }
     fun getPlayerSaves(playerId: String): List<SaveInfo> {
         return getAllSaves().filter { it.playerId == playerId }
