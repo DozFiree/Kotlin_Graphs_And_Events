@@ -14,6 +14,7 @@ import lesson2.Item
 import lesson2.ItemStack
 import lesson2.ItemType
 import lesson2.WOOD_SWORD
+import lesson4.SaveInfo
 
 enum class ItemType{
     WEAPON,
@@ -34,6 +35,9 @@ class  GameState{
         //список из 9 пустых ячеек хотбара
     )
     val selectedSlot = mutableStateOf(0)
+    val eventLog = mutableStateOf<List<String>>(emptyList())
+    val showSavesMenu = mutableStateOf(false)
+    val availableSaves = mutableStateOf<List<SaveInfo>>(emptyList())
 }
 val HEALING_POTION = Item(
     "potion_heal",
@@ -54,6 +58,60 @@ val WOOD_HELMET = Item(
     ItemType.ARMOR,
     1
 )
+sealed interface GameEvent{
+    val playerId: String
+}
+
+// события для квестов и логов
+// data class - просто удобство, он хранит данные как пакет и автоматически применяет toString
+
+data class ItemAdded(
+    override val playerId: String,
+    val itemId: String,
+    val countAdded: Int,
+    val leftOver: Int
+): GameEvent
+
+data class ItemUsed(
+    override val playerId: String,
+    val itemId: String
+): GameEvent
+
+data class DamageDealt(
+    override val playerId: String,
+    val targetId: String,
+    val amount: Int,
+): GameEvent
+
+data class EffectApplied(
+    override val playerId: String,
+    val effectId: String,
+    val tick: Int,
+): GameEvent
+
+data class QuestStepCompleted(
+    override val playerId: String,
+    val questId: String,
+    val stepIndex: Int,
+): GameEvent
+
+typealias Listener = (GameEvent) -> Unit
+class EventBus{
+
+    // функция принимающая GameEvent возвращает пустоту
+
+    private val listeners = mutableListOf<Listener>()
+
+    fun subscribe(listener: Listener){
+        listeners.add(listener)
+    }
+
+    fun publish(event: GameEvent){
+        for(listener in listeners){
+            listener(event)
+        }
+    }
+}
 fun putIntoSlot(
     slots: List<ItemStack?>,  // принимает текущие слоты инвентаря
     slotIndex: Int,   // Индекс слота, в который мы кладём предмет
@@ -65,10 +123,10 @@ fun putIntoSlot(
     // 2 - число, сколько предметов НЕ ВЛЕЗЛО В ЯЧЕЙКУ(остаток)
 
     val newSlots = slots.toMutableList()
-        // копия списка для изменений
+    // копия списка для изменений
 
     val current =  newSlots[slotIndex]
-        // current - сохраняем, информацию о том что сейчас лежит в слоте
+    // current - сохраняем, информацию о том что сейчас лежит в слоте
     if (current == null){
         val countToPlace = minOf(addCount, item.maxStack)
         //
@@ -136,7 +194,7 @@ fun main() = KoolApplication {
             setColor(Color.WHITE, 5f)
         }
         var poisonTimeSec = 0f
-        var regenTimerSec = 0f
+        var regenTimeSec = 0f
         onUpdate {
             if (game.poisonTicksLeft.value > 0) {
                 poisonTimeSec += Time.deltaT
@@ -155,7 +213,7 @@ fun main() = KoolApplication {
                     game.regenTicksLeft.value += 1
                     game.hp.value = (game.hp.value + 1).coerceAtLeast(0)
                 } else {
-                    poisonTimeSec = 0f
+                    regenTimeSec = 0f
                 }
             }
         }
@@ -288,7 +346,7 @@ fun main() = KoolApplication {
                                         game.gold.value += 1
                                     }
                                 }
-                          }
+                        }
                     }
                     Row{
                         modifier.margin(top = sizes.smallGap)
@@ -323,7 +381,7 @@ fun main() = KoolApplication {
                         Button ("Наложить яд"){
                             modifier.onClick{
                                 if(game.selectedSlot.value == 9)
-                                game.poisonTicksLeft.value += 5
+                                    game.poisonTicksLeft.value += 5
                             }
                         }
                         Button ("Сбросить манекен"){
