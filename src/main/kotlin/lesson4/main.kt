@@ -149,12 +149,7 @@ class SaveSystem(
 ){
     init {
         bus.subscribe {
-<<<<<<< HEAD
                 event ->
-=======
-            event ->
->>>>>>> 1ae96f1319801722ab79127788cc0218931f10f1
-
             if (event is PlayerProgressSaved){
                 // Ожидаем событие сохранения прогресса, и когда оно прилетит - пишем в файл
                 saveProgress(event.playerId, event.questId, event.stepId)
@@ -228,11 +223,9 @@ class SaveSystem(
                 }
             }
         }
-<<<<<<< HEAD
+
         return saves.sortedByDescending { it.filePath.lastModified() }
-=======
-         return saves.sortedByDescending { it.filePath.lastModified() }
->>>>>>> 1ae96f1319801722ab79127788cc0218931f10f1
+
     }
     fun getPlayerSaves(playerId: String): List<SaveInfo> {
         return getAllSaves().filter { it.playerId == playerId }
@@ -455,11 +448,9 @@ fun main() = KoolApplication {
                             )
 
                             if (isCritical){
-<<<<<<< HEAD
+
                                 pushLog(game, "Нанесён крит. удар! ${finalDamage} урона")
-=======
-                            pushLog(game, "Нанесён крит. удар! ${finalDamage} урона")
->>>>>>> 1ae96f1319801722ab79127788cc0218931f10f1
+
                             }
                             else  {
                                 pushLog(game, "Удар мечом. ${baseDamage}")
@@ -473,7 +464,4 @@ fun main() = KoolApplication {
 
     }
 }
-<<<<<<< HEAD
-=======
 
->>>>>>> 1ae96f1319801722ab79127788cc0218931f10f1
