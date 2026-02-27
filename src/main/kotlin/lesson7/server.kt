@@ -16,7 +16,7 @@ import de.fabmax.kool.pipeline.ClearColorLoad   // ClearColorLoad - режим: 
 
 import de.fabmax.kool.modules.ui2.*             // UI2: addPanelSurface, Column, Row, Button, Text, dp, remember, mutableStateOf
 import de.fabmax.kool.util.DynamicStruct
-import lesson6.pushLog
+
 
 
 import java.io.File
@@ -239,9 +239,9 @@ class  ServerWorld(
             )
         )
     }
-// Метод  update вызывается каждый кадр, нужен для уменьшения задержки и выполнения команд, которые дошли
+    // Метод  update вызывается каждый кадр, нужен для уменьшения задержки и выполнения команд, которые дошли
     fun update(deltaSec: Float){
-      //delta - сколько прошло времени с прошлого кадра (Time.deltaT)
+        //delta - сколько прошло времени с прошлого кадра (Time.deltaT)
 
         //уменьшаем таймер у каждой команды, за прошедшее delta время
         for (pending in inbox){
@@ -331,8 +331,8 @@ class  ServerWorld(
 
         bus.publish(
             PlayerProgressSaved(
-            playerId,
-            "Игрок перешёл на новый этам квеста ${newState.name}")
+                playerId,
+                "Игрок перешёл на новый этам квеста ${newState.name}")
         )
     }
     //Сохранение и загрузка на сервере
@@ -475,64 +475,98 @@ fun main() = KoolApplication {
                 .background(RoundRectBackground(Color(0f, 0f, 0f, 0.6f), 14.dp))
                 .padding(14.dp)
             Column {
-                Text ("Player: ${ui.playerId.use()}"){}
-                Text("HP: ${ui.hp.use()}"){}
-                Text("Gold: ${ui.gold.use()}"){}
-                Text("Quest Step: ${ui.questState.use()}"){}
-                Text("Пинг: ${ui.networkLagMs.use()} мс"){}
-            }
-            Row{
-                Button ("Повысить пинг до 50"){
-                    modifier
-                        .margin(8.dp)
-                        .onClick{
-                            ui.networkLagMs.value = 50
-                            pushLog(ui, "Пинг увеличен до ${ui.networkLagMs.value} мс")
-                        }
-                }
-                Button ("Повысить пинг до 350 ") {
-                    modifier
-                        .margin(10.dp)
-                        .onClick{
-                            ui.networkLagMs.value = 350
-                            pushLog(ui, "Пинг увеличен до ${ui.networkLagMs.value} мс")
-                        }
-                }
-                Button ("Повысить пинг до 1200 ") {
-                    modifier
-                        .margin(12.dp)
-                        .onClick{
-                            ui.networkLagMs.value = 1200
-                            pushLog(ui, "Пинг увеличен до ${ui.networkLagMs.value} мс")
-                        }
-                }
-            }
+                val qState = ui.questState.use()
+                Text("Player: ${ui.playerId.use()}") {}
+                Text("HP: ${ui.hp.use()}") {}
+                Text("Gold: ${ui.gold.use()}") {}
+                Text("Quest Step: ${ui.questState.use()}") {}
+                Text("Пинг: ${ui.networkLagMs.use()} мс") {}
 
-            Row{
-                Button ("Переключить игроков"){
-                    modifier.margin(end = 8.dp).onClick {
-                        ui.playerId.value =
-                            if (ui.playerId.value == "Player") "Player_1" else "Player_2"
+                Row {
+                    Button("Повысить пинг до 50") {
+                        modifier
+                            .margin(8.dp)
+                            .onClick {
+                                ui.networkLagMs.value = 50
+                                pushLog(ui, "Пинг увеличен до ${ui.networkLagMs.value} мс")
+                            }
+                    }
+                    Button("Повысить пинг до 350 ") {
+                        modifier
+                            .margin(10.dp)
+                            .onClick {
+                                ui.networkLagMs.value = 350
+                                pushLog(ui, "Пинг увеличен до ${ui.networkLagMs.value} мс")
+                            }
+                    }
+                    Button("Повысить пинг до 1200 ") {
+                        modifier
+                            .margin(12.dp)
+                            .onClick {
+                                ui.networkLagMs.value = 1200
+                                pushLog(ui, "Пинг увеличен до ${ui.networkLagMs.value} мс")
+                            }
                     }
                 }
+
+                Row {
+                    Button("Переключить игроков") {
+                        modifier.margin(end = 8.dp).onClick {
+                            ui.playerId.value =
+                                if (ui.playerId.value == "Player") "Player_1" else "Player_2"
+                        }
+                    }
                     // Метод сохранения не прописан, поэтому нечего будет загружать. (Не работает)
-                Button ("Сохранить игру") {
-                    modifier.margin(end = 8.dp).onClick {
-                        pushLog(ui, "Запрос сохранения отправлен на сервер...")
+                    Button("Сохранить игру") {
+                        modifier.margin(end = 8.dp).onClick {
+                            pushLog(ui, "Запрос сохранения отправлен на сервер...")
+                        }
+                    }
+
+                    Button("Загрузить игру") {
+                        modifier.margin(end = 8.dp).onClick {
+                            client.send(CmdLoadPlayer(ui.playerId.value))
+                            pushLog(ui, "Запрос загрузки отправлен на сервер...")
+                        }
                     }
                 }
+                val dialog = npc.dialogueFor(qState)
 
-                Button ("Загрузить игру") {
-                    modifier.margin(end = 8.dp).onClick {
-                        client.send(CmdLoadPlayer(ui.playerId.value))
-                        pushLog(ui, "Запрос загрузки отправлен на сервер...")
+                Text("${dialog.npcName}:") {
+                    modifier.margin(top = sizes.gap)
+                }
+                Text(dialog.text) {
+                    modifier.margin(bottom = sizes.smallGap)
+                }
+
+                Row {
+                    // перебор всех вариантов ответов диалога
+                    for (opt in dialog.options) {
+                        Button(opt.text) {
+                            modifier.margin(end = 8.dp).onClick {
+                                val pid = ui.playerId.value
+
+                                when (opt.id) {
+                                    "talk" -> client.send(CmdTalkToNpc(pid, "alchemist"))
+                                    "help" -> client.send(CmdSelectedChoice(pid, "alchemist", "help"))
+                                    "thread" -> client.send(CmdSelectedChoice(pid, "alchemist", "thread"))
+                                    "threat_confirm" -> client.send(CmdSelectedChoice(pid, "alchemist", "thread_confirm"))
+                                }
+                            }
+                        }
                     }
+                }
+                // Логироване
+                Text("LOG:") { modifier.margin(top = sizes.gap) }
+                for (line in ui.log.use()) {
+                    Text(line) { modifier.font(sizes.smallText) }
                 }
             }
         }
-
     }
 }
+
+
 
 
 
