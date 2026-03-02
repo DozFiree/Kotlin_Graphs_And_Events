@@ -118,6 +118,7 @@ sealed interface GameEvent{
     val playerId: String
 }
 
+
 data class TalkedToNpc(
     override val playerId: String,
     val npcId: String
@@ -164,6 +165,11 @@ sealed interface GameCommand {
 data class CmdTalkToNpc(
     override val playerId: String,
     val npcId: String
+): GameCommand
+
+data class CmdResetQuest(
+    override val playerId: String,
+    val questId: String
 ): GameCommand
 
 data class CmdSelectedChoice(
@@ -268,7 +274,13 @@ class  ServerWorld(
                 val newState = nextQuestState(player.questState, TalkedToNpc(cmd.playerId, cmd.npcId), cmd.npcId)
                 setQuestState(cmd.playerId, player, newState)
             }
-
+            is CmdResetQuest -> {
+                setQuestState(cmd.playerId, player, QuestState.START)
+                bus.publish(PlayerProgressSaved(
+                    cmd.playerId,
+                    "Квест сброшен вручную"
+                ))
+            }
             is CmdSelectedChoice -> {
                 bus.publish(ChoiceSelected(cmd.playerId, cmd.npcId, cmd.choiceId))
 
@@ -280,6 +292,7 @@ class  ServerWorld(
                 // После загрузки сохранения игрока - желательно тоже сохранить событием
                 bus.publish(PlayerProgressSaved(cmd.playerId, "Игрок загрузил сохранения с диска"))
             }
+
         }
     }
     // Правила квеста ( state machine)
@@ -527,6 +540,13 @@ fun main() = KoolApplication {
                         modifier.margin(end = 8.dp).onClick {
                             client.send(CmdLoadPlayer(ui.playerId.value))
                             pushLog(ui, "Запрос загрузки отправлен на сервер...")
+                        }
+                    }
+                    Button("Начать квест заново"){
+                        modifier.margin(end = 8.dp).onClick{
+                            client.send(CmdResetQuest(ui.playerId.value, "q_alchemist"))
+                            pushLog(ui, "Запрос на сброс квеста отправлен на сервер...")
+
                         }
                     }
                 }
