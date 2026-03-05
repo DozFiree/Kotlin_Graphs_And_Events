@@ -101,7 +101,7 @@ class GameServer {
     private val _players = MutableStateFlow(
         mapOf(
             "Oleg" to PlayerSave("Oleg", 100, 0, 0, 0L, "START"),
-            "Stas" to PlayerSave("Oleg", 100, 0, 0, 0, "START")
+            "Stas" to PlayerSave("Stas", 100, 0, 0, 0, "START")
         )
     )
 
@@ -415,13 +415,24 @@ fun main() = KoolApplication {
             Row{
                 Button("Switch Player"){
                     //смена 2 игроков
+                    hud.activePlayerId.value = if (hud.activePlayerId.value == "Oleg") "Stas" else "Oleg"
+                  // hud.activePlayerId.value = if (hud.activePlayerId.value == "Stas") "Oleg" else "Stas"
                 }
                 Button("Save JSON"){
                     modifier.onClick{
+
                         // получить server из Shared и если null - вернуть onClick
                         // получить playerId
                         // 1) пробовать отправить событие сохранения по playerId без корутины
                         // 2) если не удалось - отправить "нормально" через корутину this@addScene.coroutineScope.launch
+                        val server = Shared.server ?: return@onClick
+                        val playerId = hud.activePlayerId.value
+
+                        if (!server.tryPublish(SaveRequested(playerId))){
+                            this@addScene.coroutineScope.launch{
+                                server.publish(SaveRequested(playerId))
+                            }
+                        }
                     }
                 }
             }
