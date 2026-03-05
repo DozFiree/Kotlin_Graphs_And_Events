@@ -400,6 +400,31 @@ fun main() = KoolApplication {
                 .margin(16.dp)
                 .background(RoundRectBackground(Color(0f, 0f, 0f, 0.6f), 14.dp))
                 .padding(12.dp)
+
+            Text("Player: ${hud.activePlayerId.use()}"){}
+            Text("HP: ${hud.hp.use()} Gold: ${hud.gold.use()}"){
+                modifier.margin(bottom = sizes.gap)
+            }
+
+            Text("QuestState: ${hud.questState.use()}"){}
+            Text("Poison ticks left: ${hud.poisonTicksLeft.use()}"){}
+            Text("Attack cooldown: ${hud.attackCooldownMsLeft.use()}"){
+                modifier.margin(bottom = sizes.gap)
+            }
+
+            Row{
+                Button("Switch Player"){
+                    //смена 2 игроков
+                }
+                Button("Save JSON"){
+                    modifier.onClick{
+                        // получить server из Shared и если null - вернуть onClick
+                        // получить playerId
+                        // 1) пробовать отправить событие сохранения по playerId без корутины
+                        // 2) если не удалось - отправить "нормально" через корутину this@addScene.coroutineScope.launch
+                    }
+                }
+            }
         }
     }
 }
