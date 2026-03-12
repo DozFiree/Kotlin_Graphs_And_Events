@@ -100,7 +100,7 @@ class GameServer {
 
     private val _players = MutableStateFlow(
         mapOf(
-            "Oleg" to PlayerSave("Oleg", 100, 0, 0, 0L, "START"),
+            "Oleg" to PlayerSave("Oleg", 100, 0, 0, 0, "START"),
             "Stas" to PlayerSave("Stas", 100, 0, 0, 0, "START")
         )
     )
