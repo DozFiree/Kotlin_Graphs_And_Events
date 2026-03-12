@@ -42,7 +42,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 // импорты Serialization
 import kotlinx.serialization.Serializable // Анотация, что можно сохранять
 import kotlinx.serialization.json.Json // Формат файла Json
-import lesson11.GameEvent
+
 
 import lesson2.putIntoSlot
 
@@ -76,15 +76,18 @@ data class QuestJournalEntry(
     val marker: QuestMarker,
     val markerHint: String
 )
-
+sealed interface GameEvent{
+    val playerId: String
+}
+data class QuestJournalUpdated(
+    override val playerId: String
+): questJournal.GameEvent
 //------------------ События, что будут влиять на UI и другие системы -------------//
 
 sealed interface GameCommand{
     val playerId: String
 }
-data class QuestJournalUpdated(
-    override val playerId: String
-): GameCommand
+
 
 // Игрок открыл квест - поменять маркер NEW
 data class CmdOpenQuest(
@@ -96,7 +99,10 @@ data class CmdPinQuest(
     override val playerId: String,
     val questId: String
 ): GameCommand
-
+data class CmdAddQuest(
+    override val playerId: String,
+    val questId: String
+): GameCommand
 data class CmdProgressQuest(
     override val playerId: String,
     val questId: String
@@ -209,6 +215,7 @@ class GameServer{
         when (cmd){
             is CmdOpenQuest -> openQuest(cmd.playerId, cmd.questId)
             is CmdPinQuest -> pinQuest(cmd.playerId, cmd.questId)
+            is CmdAddQuest -> addQuest(cmd.playerId, cmd.questId)
             is CmdProgressQuest -> progressQuest(cmd.playerId, cmd.questId)
             is CmdSwitchPlayer -> {}
         }
@@ -247,6 +254,40 @@ class GameServer{
 
         _events.emit(QuestJournalUpdated(playerId))
     }
+    private suspend fun addQuest(playerId: String, questId: String) {
+        val quests = getPlayerQuests(playerId).toMutableList()
+        val existingQuestIndex = quests.indexOfFirst { it.questId == questId }
+
+        if (existingQuestIndex >= 0) {
+            val q = quests[existingQuestIndex]
+            quests[existingQuestIndex] = q.copy(
+                isNew = true,
+                isPinned = false,
+                step = 0,
+                status = QuestStatus.ACTIVE
+            )
+        } else {
+            val title = when(questId) {
+                "q_alchemist" -> "Алхимик и трава"
+                "q_guard" -> "Тебе сюды нельзя"
+                else -> "Новый квест"
+            }
+            quests.add(
+                QuestStateOnServer(
+                    questId,
+                    title,
+                    0,
+                    QuestStatus.ACTIVE,
+                    true,
+                    false
+                )
+            )
+        }
+
+        setPlayerQuests(playerId, quests)
+        _events.emit(QuestJournalUpdated(playerId))
+    }
+
     private suspend fun  progressQuest(playerId: String, questId: String){
         val quests = getPlayerQuests(playerId).toMutableList()
 
@@ -291,6 +332,14 @@ fun markerSymbol(m: QuestMarker): String{
         QuestMarker.COMPLETED -> "✔"
         QuestMarker.NONE -> "о"
     }
+}
+fun sortQuestEntries(entries: List<QuestJournalEntry>): List<QuestJournalEntry> {
+    return entries.sortedWith(compareBy(
+        { if (it.marker == QuestMarker.PINED) 0 else 1 },
+        { if (it.marker == QuestMarker.NEW) 0 else 1 },
+        { if (it.status == QuestStatus.ACTIVE) 0 else 1 },
+        { if (it.status == QuestStatus.COMPLETED) 0 else 1 }
+    ))
 }
 fun main() = KoolApplication {
     val hud = HudState()
@@ -368,10 +417,20 @@ fun main() = KoolApplication {
                         }
                     }
                 }
+                Button("Add Quest") {
+                    modifier.margin(start = 8.dp).onClick {
+                        server.trySend(CmdAddQuest(hud.activePlayerIdUi.value, "q_alchemist"))
+                        hudLog(hud, "Added q_alchemist for ${hud.activePlayerIdUi.value}")
+                    }
+                }
+
+
                 Text("Активные квесты:") { modifier.margin(top = sizes.gap) }
 
                 val entries = hud.questEntries.use()
                 val selectedId = hud.selectedQuestId.use()
+
+                val sortedEntries = sortQuestEntries(entries)
 
                 for (q in entries) {
                     val symbol = markerSymbol(q.marker)
@@ -403,6 +462,7 @@ fun main() = KoolApplication {
                                     server.trySend(CmdProgressQuest(hud.activePlayerIdUi.value, q.questId))
                                 }
                             }
+
                         }
                     }
                 }
