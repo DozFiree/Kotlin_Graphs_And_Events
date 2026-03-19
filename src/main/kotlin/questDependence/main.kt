@@ -64,7 +64,9 @@ enum class QuestMarker{
 enum class QuestBranch{
     NONE,
     HELP,
-    THREAD
+    THREAD,
+    PASS,
+    PAY
 }
 
 data class QuestStateOnServer(
@@ -206,6 +208,7 @@ class QuestSystem {
                     QuestBranch.NONE -> "Выбери путь: Help или Threat"
                     QuestBranch.HELP -> "Собери траву ${q.progressCurrent} / ${q.progressTarget}"
                     QuestBranch.THREAD -> "Собери золото ${q.progressCurrent} / ${q.progressTarget}"
+                    else -> ""
                 }
             }
             2 -> "Вернись к алхимику и заверши квест"
@@ -226,8 +229,9 @@ class QuestSystem {
                 1 -> {
                     when (q.branch) {
                         QuestBranch.NONE -> "Выбери как ты хочешь закрыть Котлин: Help или Threat"
-                        QuestBranch.HELP -> "Напиши контрольную и сдай Юре"
-                        QuestBranch.THREAD -> "Заплати золотом: ${q.progressCurrent} / ${q.progressTarget}"
+                        QuestBranch.PASS -> "Напиши контрольную и сдай Юре"
+                        QuestBranch.PAY -> "Заплати золотом: ${q.progressCurrent} / ${q.progressTarget}"
+                        else -> ""
                     }
                 }
                 2 -> "Сдай квест у Юры"
@@ -251,6 +255,7 @@ class QuestSystem {
                         QuestBranch.NONE -> "Выбери вариант диалога"
                         QuestBranch.HELP -> "Собери траву"
                         QuestBranch.THREAD -> "Найди золото"
+                        else -> ""
                     }
                 }
                 2 -> "NPC: Алхимик"
@@ -271,8 +276,9 @@ class QuestSystem {
                 1 -> {
                     when(q.branch){
                         QuestBranch.NONE -> "Выбери вариант диалога"
-                        QuestBranch.HELP -> "Сделай контрольную"
-                        QuestBranch.THREAD -> "Найди золото"
+                        QuestBranch.PASS -> "Сделай контрольную"
+                        QuestBranch.PAY -> "Найди золото"
+                        else -> ""
                     }
                 }
                 2 -> "NPC: Юра"
@@ -286,6 +292,8 @@ class QuestSystem {
             QuestBranch.NONE -> "Путь не выбран"
             QuestBranch.HELP -> "Путь помощи"
             QuestBranch.THREAD -> "Путь угрозы"
+            QuestBranch.PASS -> "Путь ботаника"
+            QuestBranch.PAY -> "Путь взяточника"
         }
     }
 
@@ -385,7 +393,9 @@ class QuestSystem {
                 )
 
                 QuestBranch.NONE -> q
+                else -> {q}
             }
+
         }
         if (q.step == 1 && q.branch == QuestBranch.HELP && event is ItemCollected && event.itemId == "Herb") {
             val newCurrent = (q.progressCurrent + event.countAdded).coerceAtMost(q.progressTarget)
@@ -426,7 +436,7 @@ class QuestSystem {
     fun updateYura(q: QuestStateOnServer, event: GameEvent): QuestStateOnServer{
         if (q.step == 0 && event is QuestBranchChosen && event.questId == q.questId) {
         return when (event.branch) {
-            QuestBranch.HELP -> q.copy(
+            QuestBranch.PASS -> q.copy(
                 step = 1,
                 branch = QuestBranch.HELP,
                 progressCurrent = 0,
@@ -434,7 +444,7 @@ class QuestSystem {
                 isNew = false
             )
 
-            QuestBranch.THREAD -> q.copy(
+            QuestBranch.PAY -> q.copy(
                 step = 1,
                 branch = QuestBranch.THREAD,
                 progressCurrent = 0,
@@ -443,6 +453,7 @@ class QuestSystem {
             )
 
             QuestBranch.NONE -> q
+            else -> {q}
         }
     }
     if (q.step == 1 && q.branch == QuestBranch.HELP && event is ItemCollected && event.itemId == "Kontrol_Work") {
