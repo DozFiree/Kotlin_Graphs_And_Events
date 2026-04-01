@@ -504,7 +504,7 @@ class GameServer {
 
                         val herbs = herbCount(player)
 
-                        // ИСПРАВЛЕНО: проверка на недостаток травы
+                        
                         if (herbs < 3) {
                             _events.emit(ServerMessage(cmd.playerId, "Недостаточно травы. Нужно 3, у тебя $herbs"))
                             return
@@ -530,7 +530,7 @@ class GameServer {
                             )
                         }
 
-                        // ИСПРАВЛЕНО: спавним сундук
+                        
                         spawnChest()
 
                         _events.emit(ServerMessage(cmd.playerId, "Сундук появился где-то в мире!"))
@@ -546,7 +546,7 @@ class GameServer {
                 }
             }
             is CmdSwitchActivePlayer -> {
-                //........................................................
+              //
             }
 
             is CmdResetPlayer -> {
