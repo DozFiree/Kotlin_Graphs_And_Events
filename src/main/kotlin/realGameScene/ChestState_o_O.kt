@@ -747,7 +747,7 @@ fun main() = KoolApplication {
                 val player = hud.playerSnapShot.use()
                 val dialogue = buildAlchemistDialogue(player)
 
-                Text("Игрок: ${hud.activePlayerIdFlow.use()}"){
+                Text("Игрок: ${hud.activePlayerIdUi.use()}"){
                     modifier.margin(bottom = sizes.gap)
                 }
 
