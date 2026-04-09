@@ -43,3 +43,4 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+src/test/realGameScene/ChestState_o_O.kt
