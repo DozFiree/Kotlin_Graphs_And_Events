@@ -87,7 +87,8 @@ data class PlayerState(
     val currentAreaId: String?,
     val hintText: String, // -= Подсказка что делать и тп
 
-    val facing: Facing
+    val facing: Facing,
+    val rotationY: Float = 0f
 )
 
 
@@ -138,7 +139,8 @@ fun initialPlayerState(playerId: String): PlayerState {
             ),
             null,
             "Подойди к одной из локаций",
-            Facing.FORWARD
+            Facing.FORWARD,
+            rotationY = 0f
         )
     }else{
         PlayerState(
@@ -155,7 +157,8 @@ fun initialPlayerState(playerId: String): PlayerState {
             ),
             null,
             "Подойди к одной из локаций",
-            Facing.FORWARD
+            Facing.FORWARD,
+            rotationY = 0f
         )
     }
 }
