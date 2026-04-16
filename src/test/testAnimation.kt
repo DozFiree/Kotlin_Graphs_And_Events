@@ -1,5 +1,3 @@
-package Examen
-
 
 import de.fabmax.kool.KoolApplication           // KoolApplication - запускает Kool-приложение (окно + цикл рендера)
 import de.fabmax.kool.addScene                  // addScene - функция "добавь сцену" в приложение (у тебя она просила отдельный импорт)
@@ -334,6 +332,12 @@ class HudState{
     val victoryVisible = mutableStateOf(false)
     val victoryMessage = mutableStateOf("")
 
+    val victoryPanelVisible = mutableStateOf(false)
+    val victoryPanelScale = mutableStateOf(1f)
+    val victoryPanelAlpha = mutableStateOf(1f)
+
+    val flashOverlayAlpha = mutableStateOf(0f)
+    val flashOverlayColor = mutableStateOf(Color.WHITE)
 }
 
 fun hudLog(hud: HudState, text: String){
@@ -355,6 +359,26 @@ fun sortQuestEntries(entries: List<QuestJournalEntry>): List<QuestJournalEntry> 
         { if (it.status == QuestStatus.ACTIVE) 0 else 1 },
         { if (it.status == QuestStatus.COMPLETED) 0 else 1 }
     ))
+
+}
+suspend fun animateTo(
+    target: Float,
+    durationSec: Float,
+    onUpdate: (Float) -> Unit
+) {
+    val start = System.nanoTime()
+    val durationNs = (durationSec * 1_000_000_000).toLong()
+    var current: Float
+    do {
+        val elapsed = System.nanoTime() - start
+        val t = (elapsed.toFloat() / durationNs).coerceIn(0f, 1f)
+        // easing: ease-out cubic
+        val eased = 1f - (1f - t) * (1f - t) * (1f - t)
+        current = 0f + (target - 0f) * eased
+        onUpdate(current)
+        delay(16) // ~60 fps
+    } while (elapsed < durationNs)
+    onUpdate(target)
 }
 fun main() = KoolApplication {
     val hud = HudState()
@@ -402,18 +426,43 @@ fun main() = KoolApplication {
                 }
             }
         }
+
         coroutineScope.launch {
             server.events
                 .filter { it is QuestCompleted && it.playerId == hud.activePlayerIdFlow.value }
                 .collect { event ->
                     event as QuestCompleted
                     hud.victoryMessage.value = "ПОБЕДА!\nКвест завершён: ${event.questTitle}"
-                    hud.victoryVisible.value = true
 
-                    // Автоматически скрыть через 3 секунды
+
+
+
+                    hud.victoryPanelVisible.value = true
+                    hud.victoryPanelScale.value = 0.5f
+                    hud.victoryPanelAlpha.value = 0f
+
+                    launch {
+                        // Белая вспышка
+                        hud.flashOverlayColor.value = Color(1f, 1f, 0.8f, 1f) // тёплый белый
+                        animateTo(1f, 0.1f) { hud.flashOverlayAlpha.value = it }
+                        animateTo(0f, 0.5f) { hud.flashOverlayAlpha.value = it }
+                    }
+
+                    launch {
+                        // Плавное увеличение до 1.0 за 0.3 секунды
+                        animateTo(1f, 0.3f) { value -> hud.victoryPanelScale.value = value }
+                        animateTo(1f, 0.2f) { value -> hud.victoryPanelAlpha.value = value }
+                    }
                     delay(3000)
-                    hud.victoryVisible.value = false
+                    launch {
+                        animateTo(0f, 0.2f) { value -> hud.victoryPanelAlpha.value = value }
+                        delay(200)
+                        hud.victoryPanelVisible.value = false
+                        hud.victoryPanelScale.value = 1f  // сброс для следующего раза
+                        hud.victoryPanelAlpha.value = 1f
+                    }
                 }
+
         }
         hud.activePlayerIdFlow
             .flatMapLatest { pid ->
@@ -499,13 +548,16 @@ fun main() = KoolApplication {
             for (line in hud.log.use()){
                 Text(line){ modifier.font(sizes.smallText)}
             }
-            if (hud.victoryVisible.use()) {
+            if (hud.victoryPanelVisible.use()) {
                 addPanelSurface {
                     modifier
                         .align(AlignmentX.Center, AlignmentY.Center)
                         .size(400.dp, 200.dp)
                         .background(RoundRectBackground(Color(0.1f, 0.1f, 0.1f, 0.95f), 24.dp))
                         .padding(24.dp)
+                        .scale(hud.victoryPanelScale.use())   // <-- анимация масштаба
+                        .alpha(hud.victoryPanelAlpha.use())
+
 
                     Column {
                         modifier.align(AlignmentX.Center, AlignmentY.Center)
